@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dr. Shweta Homeopathy Clinic — Expert natural healing with personalized homeopathic treatment. Safe, gentle, and effective remedies for all ages. Book your consultation today." />
+  <meta name="keywords" content="homeopathy clinic, homeopathic doctor, natural healing, holistic treatment, allergy, skin problems, migraine, stress, joint pain, hair fall" />
+  <meta name="author" content="Dr. Shweta Homeopathy Clinic" />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="Dr. Shweta | Homeopathy Clinic — Natural Healing Expert" />
+  <meta property="og:description" content="Safe, personalized homeopathic care for lasting wellness. Treating root causes, not just symptoms." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:image"       content="assets/logo.png" />
+
+  <title>Dr. Shweta | Homeopathy Clinic — Natural Healing Expert</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Three.js (must load before main.js) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <!-- Main JS -->
+  <script defer src="js/main.js"></script>
+</head>
+<body>
+
+  <!-- ── Scroll Progress Bar ── -->
+  <div id="scroll-bar" aria-hidden="true"></div>
+
+  <!-- ── WhatsApp Floating Button ── -->
+  <a href="https://wa.me/9725800797" class="fab floating-btn" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </a>
+  <div class="fab-tip" aria-hidden="true">Chat with us on WhatsApp</div>
+
+  <!-- ── Toast Notification ── -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span>✅</span>
+    <span class="toast-txt">Message sent! We'll contact you shortly.</span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       NAVBAR
+  ══════════════════════════════════════════════ -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container nav-inner">
+
+      <!-- Logo -->
+      <a href="#home" class="logo" aria-label="Dr. Shweta Homeopathy Clinic — Home">
+        <img
+          src="assets/logo.png"
+          alt="Dr. Shweta Homeopathy Clinic Logo"
+          class="logo-img"
+          width="100"
+          height="100"
+        />
+        <!-- <div class="logo-text-wrap">
+          <span class="logo-name">Dr. Shweta</span>
+          <span class="logo-sub">Homeopathy Clinic</span>
+        </div> -->
+      </a>
+
+      <!-- Desktop nav links -->
+      <ul class="nav-links" role="list">
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Treatments</a></li>
+        <li><a href="#why">Why Homeopathy</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+
+      <!-- Sticky CTA (appears after scroll) -->
+      <a href="#contact" class="btn btn-primary" id="navCta" style="display:none">
+        📅 Book Appointment
+      </a>
+
+      <!-- Hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Mobile Drawer ── -->
+  <div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <a href="#about"    onclick="closeDrawer()">About</a>
+    <a href="#services" onclick="closeDrawer()">Treatments</a>
+    <a href="#why"      onclick="closeDrawer()">Why Homeopathy</a>
+    <a href="#faq"      onclick="closeDrawer()">FAQ</a>
+    <a href="#contact"  onclick="closeDrawer()">Contact</a>
+    <a href="#contact" class="btn btn-primary" onclick="closeDrawer()">📅 Book Appointment</a>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════════ -->
+  <section class="hero" id="home" aria-label="Hero section">
+    <div class="container">
+      <div class="hero-grid">
+
+        <!-- Left — copy -->
+        <div class="hero-content">
+          <div class="hero-badge">
+            <div class="pulse-dot" aria-hidden="true"></div>
+            Now Accepting New Patients
+          </div>
+
+          <h1 class="hero-h1">
+            Natural Healing<br>
+            with <span class="hi">Expert<br>Homeopathic</span> Care
+          </h1>
+
+          <p class="hero-p">
+            Experience safe, personalized, and holistic treatment rooted in the science
+            of homeopathy. We address the root cause — not just the symptoms — for
+            lasting wellness and vitality.
+          </p>
+
+          <div class="hero-btns">
+            <a href="#contact" class="btn btn-primary">📅 Book Appointment</a>
+            <a href="tel:+919725800797" class="btn btn-outline">📞 Call Now</a>
+          </div>
+
+          <div class="hero-kpis" aria-label="Key statistics">
+            <div>
+              <div class="kpi-val" data-count="5" aria-label="5 plus years of experience">0</div>
+              <div class="kpi-lbl">Years Experience</div>
+            </div>
+            <div>
+              <div class="kpi-val" data-count="50" aria-label="50 plus conditions treated">0</div>
+              <div class="kpi-lbl">Conditions Treated</div>
+            </div>
+            <div>
+              <div class="kpi-val" aria-label="100 percent natural remedies">100%</div>
+              <div class="kpi-lbl">Natural Remedies</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right — Three.js canvas -->
+        <div class="hero-canvas-wrap">
+          <canvas id="heroCanvas" aria-hidden="true"></canvas>
+
+          <div class="float-card c1" aria-hidden="true">
+            <div class="fc-icon g">🌿</div>
+            <div>
+              <div class="fc-main">Natural Healing</div>
+              <div class="fc-sub">Zero harmful side effects</div>
+            </div>
+          </div>
+
+          <div class="float-card c2" aria-hidden="true">
+            <div class="fc-icon b">💎</div>
+            <div>
+              <div class="fc-main">Personalized Care</div>
+              <div class="fc-sub">Tailored treatment plans</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       ABOUT
+  ══════════════════════════════════════════════ -->
+  <section class="about" id="about" aria-label="About Dr. Shweta">
+    <div class="container">
+      <div class="about-grid">
+
+        <!-- Visual column -->
+        <div class="about-visual reveal-l">
+          <div class="doc-card">
+            <div class="doc-icon" aria-hidden="true">👩‍⚕️</div>
+            <div class="deco-circle d1" aria-hidden="true"></div>
+            <div class="deco-circle d2" aria-hidden="true"></div>
+            <div class="deco-circle d3" aria-hidden="true"></div>
+          </div>
+          <div class="cred-badge b1" aria-label="Qualification: BHMS and MD in Homeopathy">
+            <span class="cb-ico" aria-hidden="true">🏆</span>
+            <div>
+              <div class="cb-main">BHMS · MD (Homeopathy)</div>
+              <div class="cb-sub">Certified Homeopathic Physician</div>
+            </div>
+          </div>
+          <div class="cred-badge b2" aria-label="Holistic healing approach">
+            <span class="cb-ico" aria-hidden="true">🌱</span>
+            <div>
+              <div class="cb-main">Holistic Approach</div>
+              <div class="cb-sub">Mind, Body &amp; Spirit</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content column -->
+        <div class="about-content reveal-r">
+          <div class="tag">🌿 About Us</div>
+          <h2 class="section-title">Dedicated to Your<br>Natural Wellness Journey</h2>
+
+          <p class="about-text">
+            Welcome to our homeopathy clinic — a sanctuary dedicated to the art and science of
+            natural healing. Dr. Shweta brings over a decade of specialized homeopathic
+            expertise, seamlessly combining traditional wisdom with contemporary medical knowledge
+            to deliver comprehensive, individualized care.
+          </p>
+          <p class="about-text">
+            Whether you're navigating a chronic condition, seeking preventive wellness, or looking
+            for a safe and natural approach to family health, our clinic is your trusted partner
+            on the journey to vibrant, lasting wellbeing.
+          </p>
+
+          <blockquote class="about-quote">
+            "Homeopathy cures a larger percentage of cases than any other method of treatment and
+            is beyond all doubt safer, more economical, and the most complete medical science."
+            — Mahatma Gandhi
+          </blockquote>
+
+          <div class="feat-grid">
+            <div class="feat-item"><div class="feat-ico">🎯</div><span class="feat-txt">Root Cause Treatment</span></div>
+            <div class="feat-item"><div class="feat-ico">🤝</div><span class="feat-txt">Personalized Consultation</span></div>
+            <div class="feat-item"><div class="feat-ico">👨‍👩‍👧‍👦</div><span class="feat-txt">Family Healthcare Support</span></div>
+            <div class="feat-item"><div class="feat-ico">🌿</div><span class="feat-txt">Holistic Healing Approach</span></div>
+            <div class="feat-item"><div class="feat-ico">💊</div><span class="feat-txt">Safe &amp; Gentle Remedies</span></div>
+            <div class="feat-item"><div class="feat-ico">⏰</div><span class="feat-txt">Flexible Appointments</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SERVICES / TREATMENTS
+  ══════════════════════════════════════════════ -->
+  <section class="services" id="services" aria-label="Our treatment services">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="tag">💊 Our Treatments</div>
+        <h2 class="section-title">Comprehensive Homeopathic<br>Treatment Services</h2>
+        <p class="section-sub">
+          Expert homeopathic care for a wide range of conditions — from acute ailments to
+          chronic diseases — using carefully selected, individualized natural remedies.
+        </p>
+      </div>
+      <!-- Cards injected by JS -->
+      <div class="services-grid" id="servGrid" role="list"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       WHY CHOOSE HOMEOPATHY
+  ══════════════════════════════════════════════ -->
+  <section class="why" id="why" aria-label="Why choose homeopathy">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="tag">✨ Why Homeopathy</div>
+        <h2 class="section-title">The Natural Path to<br>Lasting Wellness</h2>
+        <p class="section-sub">
+          Homeopathy is a time-tested, evidence-based system of medicine that works in harmony
+          with your body's own healing intelligence to restore health gently and permanently.
+        </p>
+      </div>
+      <!-- Cards injected by JS -->
+      <div class="why-grid" id="whyGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       APPOINTMENT / CONTACT  (Cal.com integrated)
+  ══════════════════════════════════════════════ -->
+  <section class="contact" id="contact" aria-label="Book an appointment">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="tag">📅 Book Appointment</div>
+        <h2 class="section-title">Schedule Your Consultation<br>Online — Instantly</h2>
+        <p class="section-sub">
+          Pick a date and time that works for you. Our calendar is live — no waiting,
+          no phone tag, instant confirmation sent to your inbox.
+        </p>
+      </div>
+
+      <div class="contact-grid">
+
+        <!-- LEFT — Cal.com Inline Scheduler -->
+        <div class="cal-card reveal-l">
+          <div class="cal-card-head">
+            <div class="cal-card-title">📅 Book a Free Consultation</div>
+            <p class="cal-card-sub">
+              Choose a convenient slot below. Consultations are available in-clinic and via video call.
+            </p>
+            <div class="cal-card-badges">
+              <span class="cal-badge">🕐 30-min session</span>
+              <span class="cal-badge">🌿 Free first visit</span>
+              <span class="cal-badge">📹 Video available</span>
+            </div>
+          </div>
+
+          <!--
+            Cal.com embeds the live booking calendar here.
+            To configure: open js/main.js → find initCalEmbed()
+            → replace 'your-cal-username/consultation' with your
+              actual Cal.com event link, e.g. 'drpriyasharma/30min'
+          -->
+          <div id="cal-booking">
+            <!-- Loading state shown before Cal.com script fires -->
+            <div class="cal-loading">
+              <div class="cal-loading-spinner"></div>
+              <p>Loading availability calendar…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT — Contact Information -->
+        <div class="info-card reveal-r">
+          <div class="info-title">Clinic Information</div>
+
+          <div class="ci-row">
+            <div class="ci-ico">📍</div>
+            <div>
+              <div class="ci-lbl">Address</div>
+              <div class="ci-val">123, Green Avenue, Sector 14<br>New Delhi – 110 001</div>
+            </div>
+          </div>
+
+          <div class="ci-row">
+            <div class="ci-ico">📞</div>
+            <div>
+              <div class="ci-lbl">Phone</div>
+              <div class="ci-val">+91 97258 00797</div>
+            </div>
+          </div>
+
+          <div class="ci-row">
+            <div class="ci-ico">✉️</div>
+            <div>
+              <div class="ci-lbl">Email</div>
+              <div class="ci-val">shweta.shingala26@gmail.com</div>
+            </div>
+          </div>
+
+          <div class="ci-row">
+            <div class="ci-ico">🕐</div>
+            <div>
+              <div class="ci-lbl">Clinic Hours</div>
+              <div class="ci-val">Mon–Fri: 9 AM – 7 PM<br>Saturday: 9 AM – 5 PM</div>
+            </div>
+          </div>
+
+          <div class="cta-btns">
+            <a href="https://wa.me/919725800797" class="btn btn-wa" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>Chat on WhatsApp
+            </a>
+            <a href="tel:+919725800797" class="btn btn-call">
+              📞 Call Us Now
+            </a>
+          </div>
+
+          <div class="map-ph" role="img" aria-label="Google Maps placeholder">
+            <span>🗺️</span>
+            Google Maps embed goes here
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       FAQ
+  ══════════════════════════════════════════════ -->
+  <section class="faq" id="faq" aria-label="Frequently asked questions">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div class="tag">❓ FAQ</div>
+        <h2 class="section-title">Questions We Hear<br>Every Day</h2>
+        <p class="section-sub">
+          Curious about homeopathy? Here are honest, clear answers to the questions our
+          patients ask most.
+        </p>
+      </div>
+      <!-- FAQ items injected by JS -->
+      <div class="faq-wrap" id="faqWrap"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <footer class="footer" aria-label="Footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <!-- Brand column -->
+        <div>
+          <div class="f-logo">
+            <img
+              src="assets/dark-logo.png"
+              alt="Dr. Shweta Homeopathy Clinic"
+              class="f-logo-img"
+            />
+          </div>
+          <p class="f-tag">
+            Dedicated to providing safe, natural, and personalized homeopathic care
+            for the entire family. Your wellness is our purpose.
+          </p>
+          <div class="socials" aria-label="Social media links">
+            <!-- Facebook -->
+            <a href="#" class="soc" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </a>
+            <!-- Instagram -->
+            <a href="#" class="soc" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+            </a>
+            <!-- YouTube -->
+            <a href="#" class="soc" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/>
+              </svg>
+            </a>
+            <!-- X / Twitter -->
+            <a href="#" class="soc" aria-label="X / Twitter">
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick links -->
+        <div>
+          <div class="f-head">Quick Links</div>
+          <ul class="f-links">
+            <li><a href="#about">→ About Us</a></li>
+            <li><a href="#services">→ Treatments</a></li>
+            <li><a href="#why">→ Why Homeopathy</a></li>
+            <li><a href="#faq">→ FAQ</a></li>
+            <li><a href="#contact">→ Book Appointment</a></li>
+          </ul>
+        </div>
+
+        <!-- Treatments -->
+        <div>
+          <div class="f-head">Treatments</div>
+          <ul class="f-links">
+            <li><a href="#services">→ Allergy &amp; Sinus</a></li>
+            <li><a href="#services">→ Skin Problems</a></li>
+            <li><a href="#services">→ Migraine</a></li>
+            <li><a href="#services">→ Joint Pain</a></li>
+            <li><a href="#services">→ Women's Health</a></li>
+            <li><a href="#services">→ Child Care</a></li>
+          </ul>
+        </div>
+
+        <!-- Hours -->
+        <div>
+          <div class="f-head">Clinic Hours</div>
+          <div class="hours">
+            <div class="hr-row">
+              <span class="hr-day">Monday - Saturday</span>
+              <span class="hr-time">10 AM - 9 PM</span>
+            </div>
+            <div class="hr-row">
+              <span class="hr-day">Sunday</span>
+              <span class="hr-time">Online Appointment only</span>
+            </div>
+            <div class="hr-row">
+              <span class="hr-day"><i class="fa fa-globe"></i> Global consultation</span>
+              <span class="hr-time">Available 24/7</span>
+            </div>
+          </div>
+          <address style="margin-top:18px;font-style:normal;font-size:.8rem;color:rgba(255,255,255,.45);line-height:1.75;">
+            📍 Comming soon in<br>Ahemdabad<br>
+            📞 +91 97258 00797
+          </address>
+        </div>
+
+      </div>
+
+      <div class="footer-btm">
+        <p class="f-copy">© <script>document.write(new Date().getFullYear())</script> Dr. Shweta's Homeopathy Clinic. All rights reserved.</p>
+        <p class="f-copy">Crafted with 💚 for natural wellness</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
