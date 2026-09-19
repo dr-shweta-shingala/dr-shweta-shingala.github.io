@@ -18,18 +18,24 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-  <!-- Three.js (must load before main.js) -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <!-- Main JS -->
   <script defer src="js/main.js"></script>
 </head>
 <body>
+
+  <!-- ── Preloader ── -->
+  <div id="preloader" aria-hidden="true">
+    <div class="pre-inner">
+      <span class="pre-label">Restoring Balance</span>
+      <span class="pre-count" id="preCount">0</span>
+    </div>
+  </div>
 
   <!-- ── Scroll Progress Bar ── -->
   <div id="scroll-bar" aria-hidden="true"></div>
@@ -148,9 +154,16 @@
           </div>
         </div>
 
-        <!-- Right — Three.js canvas -->
+        <!-- Right — the clinic emblem as flat vector artwork, given
+             depth by CSS 3D (float + pointer tilt) rather than being
+             rebuilt as geometry, so the logo stays pixel-exact. -->
         <div class="hero-canvas-wrap">
-          <canvas id="heroCanvas" aria-hidden="true"></canvas>
+          <div class="hero-canvas-stage" id="emblemStage">
+            <div class="emblem3d">
+              <img src="assets/emblem.svg" alt="Dr. Shweta's Homeopathy Clinic emblem — mortar and pestle with herbal leaves"
+                   class="emblem-img" width="440" height="440" decoding="async" />
+            </div>
+          </div>
 
           <div class="float-card c1" aria-hidden="true">
             <div class="fc-icon g">🌿</div>

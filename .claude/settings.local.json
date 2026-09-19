@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//home/denis/Downloads/**)"
+      "Read(//home/denis/Downloads/**)",
+      "Bash(node --check /home/denis/Denis/Site/js/main.js)"
     ]
   }
 }

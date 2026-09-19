@@ -1,5 +1,5 @@
 /* =================================================================
-   Dr. Priya Sharma — Homeopathy Clinic  |  Main JavaScript
+   Dr. Shweta Shingala — Homeopathy Clinic  |  Main JavaScript
    ================================================================= */
 "use strict";
 
@@ -116,6 +116,29 @@ function toggleFAQ(idx) {
 window.toggleFAQ = toggleFAQ;
 
 /* ─────────────────────────────────────────────────────────────────
+   PRELOADER — counts up, then reveals the site
+───────────────────────────────────────────────────────────────── */
+function initPreloader() {
+  const pre     = document.getElementById('preloader');
+  const countEl = document.getElementById('preCount');
+  if (!pre || !countEl) return;
+
+  const duration = 1400;
+  const start    = performance.now();
+
+  function tick(now) {
+    const pct = Math.min(100, Math.round(((now - start) / duration) * 100));
+    countEl.textContent = pct;
+    if (pct < 100) {
+      requestAnimationFrame(tick);
+    } else {
+      setTimeout(() => pre.classList.add('done'), 250);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ─────────────────────────────────────────────────────────────────
    NAVBAR — scroll effect + CTA reveal + progress bar
 ───────────────────────────────────────────────────────────────── */
 function initNavbar() {
@@ -215,6 +238,29 @@ function initCounters() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   3D POINTER TILT  (service & why cards)
+   Fine-pointer, hover-capable devices only, and skipped entirely
+   under prefers-reduced-motion — a subtle perspective tilt that
+   follows the cursor, resetting smoothly via the existing CSS
+   transition on mouseleave.
+───────────────────────────────────────────────────────────────── */
+function initCardTilt() {
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!canHover || reducedMotion) return;
+
+  document.querySelectorAll('.srv-card, .why-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r  = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width  - 0.5;
+      const py = (e.clientY - r.top)  / r.height - 0.5;
+      card.style.transform = `perspective(700px) rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 8).toFixed(2)}deg) translateY(-8px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────
    CAL.COM INLINE EMBED
    Replace 'your-cal-username/consultation' with your actual Cal.com
    event link, e.g. 'drpriyasharma/30min'
@@ -286,7 +332,7 @@ function initCalEmbed() {
   /* ── Apply brand theming ── */
   window.Cal('ui', {
     styles: {
-      branding: { brandColor: '#2D9E5F' },
+      branding: { brandColor: '#2F6B45' },
     },
     hideEventTypeDetails: false,
     layout: 'month_view',
@@ -294,223 +340,43 @@ function initCalEmbed() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   THREE.JS HERO 3‑D ANIMATION
+   HERO EMBLEM TILT
+   The emblem is the real logo artwork (assets/emblem.svg), so it stays
+   pixel-exact at any size. Depth comes from tilting it in CSS 3D
+   rather than rebuilding it as geometry — a rebuilt model could never
+   match the artwork, and a flat badge design reads badly once it turns
+   far anyway. The tilt is small and bounded for the same reason.
+
+   Idle float lives in CSS; this only takes over while the pointer is
+   actually over the stage. Skipped on touch and under reduced-motion.
 ───────────────────────────────────────────────────────────────── */
-function initThreeJS() {
-  if (typeof THREE === 'undefined') {
-    console.warn('Three.js not loaded — skipping hero animation');
-    return;
-  }
+function initEmblemTilt() {
+  const stage = document.getElementById('emblemStage');
+  if (!stage) return;
+  const art = stage.querySelector('.emblem3d');
+  if (!art) return;
 
-  const canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-  const wrap = canvas.parentElement;
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!canHover || reducedMotion) return;
 
-  const W = () => wrap.clientWidth;
-  const H = () => wrap.clientHeight;
+  const MAX = 9;   /* degrees — beyond this the flat artwork starts to skew */
 
-  /* ── Renderer ── */
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(W(), H());
-  renderer.setClearColor(0x000000, 0);
-
-  /* ── Scene + Camera ── */
-  const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(58, W() / H(), 0.1, 100);
-  camera.position.set(0, 0, 9);
-
-  /* ── Lights ── */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-
-  const pl1 = new THREE.PointLight(0x3DB870, 2.5, 25);
-  pl1.position.set(6, 6, 5);
-  scene.add(pl1);
-
-  const pl2 = new THREE.PointLight(0x4ECDC4, 1.8, 22);
-  pl2.position.set(-6, -4, 3);
-  scene.add(pl2);
-
-  const pl3 = new THREE.PointLight(0xA8E6CF, 1.0, 18);
-  pl3.position.set(0, 8, -2);
-  scene.add(pl3);
-
-  /* ── DNA Double Helix ── */
-  const dnaGroup = new THREE.Group();
-  const N = 70, RADIUS = 1.75, HEIGHT = 10, TURNS = 3.5;
-
-  const matA = new THREE.MeshPhongMaterial({
-    color: 0x2D9E5F, emissive: 0x1B6B3A, emissiveIntensity: .25, shininess: 90,
-  });
-  const matB = new THREE.MeshPhongMaterial({
-    color: 0x4ECDC4, emissive: 0x2D9E9A, emissiveIntensity: .25, shininess: 90,
-  });
-  const sGeo = new THREE.SphereGeometry(0.11, 10, 10);
-
-  const strandA = [], strandB = [];
-
-  for (let i = 0; i < N; i++) {
-    const t  = i / (N - 1);
-    const a  = t * Math.PI * 2 * TURNS;
-    const y  = (t - 0.5) * HEIGHT;
-    const xa = Math.cos(a) * RADIUS,         za = Math.sin(a) * RADIUS;
-    const xb = Math.cos(a + Math.PI) * RADIUS, zb = Math.sin(a + Math.PI) * RADIUS;
-
-    const sA = new THREE.Mesh(sGeo, matA);
-    sA.position.set(xa, y, za);
-    dnaGroup.add(sA);
-    strandA.push(new THREE.Vector3(xa, y, za));
-
-    const sB = new THREE.Mesh(sGeo, matB);
-    sB.position.set(xb, y, zb);
-    dnaGroup.add(sB);
-    strandB.push(new THREE.Vector3(xb, y, zb));
-  }
-
-  /* Cross rungs */
-  const rungMat = new THREE.LineBasicMaterial({ color: 0xA8E6CF, transparent: true, opacity: .55 });
-  for (let i = 0; i < N; i += 4) {
-    dnaGroup.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([strandA[i], strandB[i]]),
-      rungMat
-    ));
-  }
-
-  /* Spine lines */
-  const spineA = new THREE.LineBasicMaterial({ color: 0x3DB870, transparent: true, opacity: .4 });
-  const spineB = new THREE.LineBasicMaterial({ color: 0x4ECDC4, transparent: true, opacity: .4 });
-  dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(strandA), spineA));
-  dnaGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(strandB), spineB));
-
-  scene.add(dnaGroup);
-
-  /* ── Floating Medicine Globules ── */
-  const GLOB_COLORS = [0xA8E6CF, 0x4ECDC4, 0x3DB870, 0xD4F5E9, 0x80CBC4];
-  const globules = [];
-
-  for (let i = 0; i < 22; i++) {
-    const r   = Math.random() * 0.18 + 0.07;
-    const mat = new THREE.MeshPhongMaterial({
-      color:       GLOB_COLORS[i % GLOB_COLORS.length],
-      transparent: true,
-      opacity:     Math.random() * 0.45 + 0.25,
-      shininess:   140,
-    });
-    const mesh  = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 12), mat);
-    const dist  = Math.random() * 3.5 + 2.8;
-    const theta = Math.random() * Math.PI * 2;
-    const phi   = (Math.random() - 0.5) * Math.PI;
-    mesh.position.set(
-      dist * Math.cos(phi) * Math.cos(theta),
-      (Math.random() - 0.5) * 7,
-      dist * Math.cos(phi) * Math.sin(theta)
-    );
-    mesh.userData = {
-      speed:  Math.random() * 0.6 + 0.3,
-      phase:  Math.random() * Math.PI * 2,
-      baseY:  mesh.position.y,
-      rotSpd: (Math.random() - 0.5) * 0.02,
-    };
-    scene.add(mesh);
-    globules.push(mesh);
-  }
-
-  /* ── Background Particle Field ── */
-  const PC  = window.innerWidth < 600 ? 180 : 480;
-  const pos = new Float32Array(PC * 3);
-  const col = new Float32Array(PC * 3);
-
-  for (let i = 0; i < PC; i++) {
-    pos[i*3]   = (Math.random() - 0.5) * 22;
-    pos[i*3+1] = (Math.random() - 0.5) * 22;
-    pos[i*3+2] = (Math.random() - 0.5) * 14 - 5;
-    const c = new THREE.Color().setHSL(Math.random() * 0.18 + 0.32, 0.65, 0.65);
-    col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
-  }
-
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  pGeo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
-  const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
-    size: .045, vertexColors: true, transparent: true, opacity: .65,
-  }));
-  scene.add(particles);
-
-  /* ── Orbital Torus Rings ── */
-  const ringObjects = [];
-  [[3.8, 0x4ECDC4, 0.18], [4.4, 0xA8E6CF, 0.10], [5.0, 0x3DB870, 0.07]].forEach(([r, c, o], i) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(r, 0.022, 8, 80),
-      new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o })
-    );
-    ring.rotation.set(Math.PI / 2 + i * 0.28, 0, i * 0.42);
-    ring.userData.rotSpeed = 0.0008 + i * 0.0004;
-    scene.add(ring);
-    ringObjects.push(ring);
-  });
-
-  /* ── Mouse / Touch Parallax ── */
-  let mx = 0, my = 0, tRx = 0, tRy = 0;
-
-  document.addEventListener('mousemove', e => {
-    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
-    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  stage.addEventListener('pointermove', e => {
+    const r = stage.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width  - 0.5;
+    const py = (e.clientY - r.top)  / r.height - 0.5;
+    art.classList.add('steering');
+    art.style.transform =
+      `translateY(${(-py * 6).toFixed(1)}px) ` +
+      `rotateX(${(-py * 2 * MAX).toFixed(2)}deg) ` +
+      `rotateY(${(px * 2 * MAX).toFixed(2)}deg)`;
   }, { passive: true });
 
-  document.addEventListener('touchmove', e => {
-    if (e.touches.length > 0) {
-      mx = (e.touches[0].clientX / window.innerWidth  - 0.5) * 2;
-      my = (e.touches[0].clientY / window.innerHeight - 0.5) * 2;
-    }
+  stage.addEventListener('pointerleave', () => {
+    art.classList.remove('steering');
+    art.style.transform = '';
   }, { passive: true });
-
-  /* ── Animation Loop ── */
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += 0.005;
-
-    /* DNA */
-    dnaGroup.rotation.y = t * 0.28;
-    dnaGroup.position.y = Math.sin(t * 0.4) * 0.28;
-
-    /* Pulsing lights */
-    pl1.intensity = 2.5 + Math.sin(t * 0.7) * 0.5;
-    pl2.intensity = 1.8 + Math.cos(t * 0.5) * 0.4;
-
-    /* Globules */
-    globules.forEach(g => {
-      g.position.y = g.userData.baseY + Math.sin(t * g.userData.speed + g.userData.phase) * 0.9;
-      g.rotation.x += g.userData.rotSpd;
-      g.rotation.z += g.userData.rotSpd * 0.7;
-    });
-
-    /* Rings */
-    ringObjects.forEach(r => {
-      r.rotation.z += r.userData.rotSpeed;
-      r.rotation.x += r.userData.rotSpeed * 0.5;
-    });
-
-    /* Particle drift */
-    particles.rotation.y = t * 0.018;
-    particles.rotation.x = t * 0.009;
-
-    /* Smooth mouse parallax */
-    tRx += (my * 0.18 - tRx) * 0.04;
-    tRy += (mx * 0.18 - tRy) * 0.04;
-    scene.rotation.x = tRx;
-    scene.rotation.y = tRy;
-
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  /* ── Resize Handler ── */
-  window.addEventListener('resize', () => {
-    renderer.setSize(W(), H());
-    camera.aspect = W() / H();
-    camera.updateProjectionMatrix();
-  });
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -529,6 +395,7 @@ function showToast(msg) {
    BOOTSTRAP — run everything when DOM is ready
 ───────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  initPreloader();
   renderServices();
   renderWhy();
   renderFAQ();
@@ -536,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initScrollReveal();
   initCounters();
+  initCardTilt();  /* after renderServices()/renderWhy() so the cards exist */
   initCalEmbed();
-  initThreeJS();   /* Three.js must be loaded before this script */
+  initEmblemTilt();
 });
