@@ -356,27 +356,432 @@ function initEmblemTilt() {
   const art = stage.querySelector('.emblem3d');
   if (!art) return;
 
+  /* Build the extrusion behind the face: copies of the same SVG (one
+     network fetch, cached) stepped back in Z and progressively darkened,
+     so the badge has a visible side wall when it tilts. Injected rather
+     than authored in markup so the page still shows the plain logo with
+     JS off. */
+  const stack = document.getElementById('emblemStack');
+  const face = stack && stack.querySelector('.emblem-img');
+  if (stack && face) {
+    const LAYERS = DEPTH_LAYERS, STEP = DEPTH_STEP;
+    const frag = document.createDocumentFragment();
+    for (let i = LAYERS; i >= 1; i--) {
+      const layer = document.createElement('img');
+      layer.src = face.getAttribute('src');
+      layer.alt = '';
+      layer.setAttribute('aria-hidden', 'true');
+      layer.className = 'emblem-depth';
+      /* darkest at the back, easing toward the lit face */
+      const k = i / LAYERS;
+      layer.style.transform = `translateZ(${(-i * STEP).toFixed(2)}px)`;
+      layer.style.filter = `brightness(${(1 - 0.5 * k).toFixed(3)}) saturate(${(1 - 0.25 * k).toFixed(3)})`;
+      frag.appendChild(layer);
+    }
+    const shadow = document.createElement('div');
+    shadow.className = 'emblem-shadow';
+    shadow.setAttribute('aria-hidden', 'true');
+    frag.appendChild(shadow);
+    stack.insertBefore(frag, face);   /* behind the crisp face */
+  }
+
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!canHover || reducedMotion) return;
 
-  const MAX = 9;   /* degrees — beyond this the flat artwork starts to skew */
+  const MAX = 13;   /* degrees — enough to show the side wall, short of skewing the art */
+  /* The idle float's first keyframe. Handing control back at exactly this
+     pose lets the CSS animation resume without a jump. */
+  const REST_POSE = 'translateY(0px) rotateX(2deg) rotateY(-6deg)';
+  let releaseTimer = null;
+
+  /* Current tilt in degrees, shared with the scatter so it can reproduce
+     the extrusion on its own canvas at the same lean. Seeded with the
+     idle float's first keyframe. */
+  const tilt = { rx: 2, ry: -6 };
 
   stage.addEventListener('pointermove', e => {
     const r = stage.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width  - 0.5;
     const py = (e.clientY - r.top)  / r.height - 0.5;
-    art.classList.add('steering');
+
+    if (!art.classList.contains('steering')) {
+      /* Freeze the float at its current pose before killing it. Without
+         this the animation is cut mid-cycle and the badge snaps from
+         wherever it was drifting straight to the pointer pose. */
+      const pose = getComputedStyle(art).transform;
+      if (pose && pose !== 'none') art.style.transform = pose;
+      art.classList.add('steering');
+      void art.offsetWidth;   /* commit the frozen pose before it transitions */
+    }
+    clearTimeout(releaseTimer);
+    art.classList.remove('releasing');
+
+    tilt.rx = -py * 2 * MAX;
+    tilt.ry = px * 2 * MAX;
     art.style.transform =
       `translateY(${(-py * 6).toFixed(1)}px) ` +
-      `rotateX(${(-py * 2 * MAX).toFixed(2)}deg) ` +
-      `rotateY(${(px * 2 * MAX).toFixed(2)}deg)`;
+      `rotateX(${tilt.rx.toFixed(2)}deg) ` +
+      `rotateY(${tilt.ry.toFixed(2)}deg)`;
   }, { passive: true });
 
   stage.addEventListener('pointerleave', () => {
-    art.classList.remove('steering');
-    art.style.transform = '';
+    /* Glide to the float's start pose, then hand back, so the animation
+       picks up from where we left it rather than snapping to 0%. */
+    clearTimeout(releaseTimer);
+    art.classList.add('releasing');
+    art.style.transform = REST_POSE;
+    tilt.rx = 2; tilt.ry = -6;
+    releaseTimer = setTimeout(() => {
+      art.classList.remove('steering', 'releasing');
+      art.style.transform = '';
+    }, 340);
   }, { passive: true });
+
+  if (stack && face) initEmblemScatter(stage, stack, face, tilt);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   HERO EMBLEM SCATTER
+   Resting the cursor on the badge disintegrates the whole emblem into
+   pixels and holds it there; moving off reassembles it. The cursor also
+   shoves the pixels nearest it, so the cloud reacts as you move, but
+   the scatter itself is driven by presence, not by movement — an
+   earlier version decayed the moment you stopped, which read as the
+   effect breaking.
+
+   Every particle has its own scatter destination, and the spring pulls
+   toward `home + destination × hover` rather than toward home, so the
+   whole image comes apart instead of only a ring around the cursor.
+
+   At rest the canvas is dropped entirely and the crisp SVG shows, so
+   the logo is full resolution whenever it isn't being touched. Built
+   lazily on first hover.
+───────────────────────────────────────────────────────────────── */
+const DEPTH_LAYERS = 8, DEPTH_STEP = 1.5;   /* ≈12px of badge thickness */
+
+function initEmblemScatter(stage, stack, face, tilt) {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'emblem-particles';
+  canvas.setAttribute('aria-hidden', 'true');
+  stack.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  /* Rasterised copy of the SVG, reused as the crisp base while parts of
+     the emblem are still assembled. */
+  const base = document.createElement('canvas');
+  const bctx = base.getContext('2d');
+
+  /* Scratch copy of the face with the scattered cells already punched
+     out, and a dark silhouette derived from it each frame. The CSS depth
+     layers are eight copies of the full artwork, which is fine behind an
+     opaque face but reads as a second logo once holes open; a solid
+     silhouette is what the side wall of an extruded badge looks like. */
+  const tmp = document.createElement('canvas');
+  const tctx = tmp.getContext('2d');
+  const silh = document.createElement('canvas');
+  const sctx = silh.getContext('2d');
+
+  let parts = [], cell = 4, dpr = 1, pad = 0;
+  let built = false, failed = false, active = false, rafId = null;
+  let hover = 0, hoverTarget = 0;
+  let px = -1e4, py = -1e4;
+
+  const SPRING = 0.10;
+  const FRICTION = 0.82;
+  const PUSH_RADIUS = 66;   /* CSS px — keep the disturbed patch clearly local */
+
+  function build() {
+    built = true;
+    /* offsetWidth/Height, not getBoundingClientRect: the badge sits in a
+       rotated 3D container, and the rect reports the transformed bounding
+       box. Sizing the canvas from that gave it dimensions that didn't
+       match its own layout box, so the bitmap got rescaled. */
+    const artWc = face.offsetWidth;
+    const artHc = face.offsetHeight;
+    if (!artWc || !face.complete) { built = false; return false; }
+
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    /* Size the canvas from whole CSS pixels and derive the backing store
+       from that, so backing === css × dpr exactly. Sizing it off the
+       percentage box left the two a pixel or so apart, the browser
+       rescaled the whole bitmap, and the canvas read as slightly smaller
+       and softer than the <img> — half of the visible handoff. */
+    const padWc = Math.round(artWc * 0.25);
+    const padHc = Math.round(artHc * 0.25);
+    const boxWc = artWc + padWc * 2;
+    const boxHc = artHc + padHc * 2;
+
+    canvas.style.left = -padWc + 'px';
+    canvas.style.top = -padHc + 'px';
+    canvas.style.width = boxWc + 'px';
+    canvas.style.height = boxHc + 'px';
+
+    canvas.width = base.width = Math.round(boxWc * dpr);
+    canvas.height = base.height = Math.round(boxHc * dpr);
+
+    const artW = Math.round(artWc * dpr);
+    const artH = Math.round(artHc * dpr);
+    pad = Math.round(padWc * dpr);
+    const padY = Math.round(padHc * dpr);
+
+    bctx.clearRect(0, 0, base.width, base.height);
+    bctx.drawImage(face, pad, padY, artW, artH);
+
+    tmp.width = silh.width = base.width;
+    tmp.height = silh.height = base.height;
+
+    let data;
+    try {
+      data = bctx.getImageData(0, 0, base.width, base.height).data;
+    } catch (err) {
+      /* A tainted canvas would mean the SVG isn't same-origin; leave the
+         static logo alone rather than showing nothing. */
+      console.warn('Emblem scatter unavailable (canvas read blocked)', err);
+      failed = true;
+      return false;
+    }
+
+    /* Every cell is scanned in full, and a cell counts as long as any
+       pixel in it is even faintly visible. Sampling only the cell's
+       top-left pixel and demanding alpha >= 40 meant the artwork's
+       anti-aliased edges never became particles: the solid interior flew
+       away while a ghost outline of every shape stayed behind in the
+       base bitmap, which is the border left around the scatter. Colour
+       is the alpha-weighted average and the particle keeps its own
+       coverage, so soft edges stay soft instead of turning chunky. */
+    const W = base.width, H = base.height;
+    cell = Math.max(2, Math.round(2 * dpr));
+    parts = [];
+    for (let y = 0; y < H; y += cell) {
+      const yEnd = Math.min(y + cell, H);
+      for (let x = 0; x < W; x += cell) {
+        const xEnd = Math.min(x + cell, W);
+        let rs = 0, gs = 0, bs = 0, as = 0, peak = 0, n = 0;
+        for (let yy = y; yy < yEnd; yy++) {
+          let i = (yy * W + x) * 4;
+          for (let xx = x; xx < xEnd; xx++, i += 4) {
+            const a = data[i + 3];
+            if (a > peak) peak = a;
+            rs += data[i] * a; gs += data[i + 1] * a; bs += data[i + 2] * a;
+            as += a; n++;
+          }
+        }
+        if (peak < 8) continue;
+        const wsum = as || 1;
+        const ang = Math.random() * Math.PI * 2;
+        const dist = (14 + Math.random() * 86) * dpr;
+        parts.push({
+          x, y,
+          fill: `rgba(${Math.round(rs / wsum)},${Math.round(gs / wsum)},${Math.round(bs / wsum)},` +
+                `${(as / n / 255).toFixed(3)})`,
+          sx: Math.cos(ang) * dist,   /* random component of the flight */
+          sy: Math.sin(ang) * dist,
+          dist,                        /* magnitude, for the outward burst */
+          lag: 0.6 + Math.random() * 0.4,
+          ox: 0, oy: 0, vx: 0, vy: 0,
+        });
+      }
+    }
+    if (!parts.length) { failed = true; return false; }
+    return true;
+  }
+
+  const live = [];   /* reused each frame; avoids per-frame allocation */
+
+  /* Renders whatever is currently in `live`. Shared by the loop and by
+     wake(), so the very first painted frame already carries the
+     extrusion — drawing just the face there flashed a flat badge for a
+     frame, since the class has already hidden the CSS depth layers. */
+  function paint() {
+    /* Punch the holes first, into a scratch copy of the face. The
+       extrusion is then derived from what's *left*, so it can't outlive
+       the artwork above it. Building it from the full face instead left
+       a dark fringe tracing every shape: the silhouette copies are
+       scaled and offset, so they spill past the face's own footprint,
+       and no particle exists out there to clear them. */
+    tctx.clearRect(0, 0, tmp.width, tmp.height);
+    tctx.drawImage(base, 0, 0);
+    for (let i = 0; i < live.length; i++) {
+      const q = live[i];
+      tctx.clearRect(q.x, q.y, cell, cell);
+    }
+
+    sctx.clearRect(0, 0, silh.width, silh.height);
+    sctx.drawImage(tmp, 0, 0);
+    sctx.globalCompositeOperation = 'source-in';
+    sctx.fillStyle = '#123F22';
+    sctx.fillRect(0, 0, silh.width, silh.height);
+    sctx.globalCompositeOperation = 'source-over';
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    const rxr = (tilt ? tilt.rx : 0) * Math.PI / 180;
+    const ryr = (tilt ? tilt.ry : 0) * Math.PI / 180;
+    for (let i = DEPTH_LAYERS; i >= 1; i--) {
+      const d = i * DEPTH_STEP * dpr;
+      const s = 900 / (900 + d);
+      const w = silh.width * s, h = silh.height * s;
+      ctx.globalAlpha = 0.42 - i * 0.02;
+      ctx.drawImage(
+        silh,
+        cx - w / 2 - d * Math.sin(ryr),
+        cy - h / 2 + d * Math.sin(rxr),
+        w, h
+      );
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.drawImage(tmp, 0, 0);
+    /* Separate pass: clearing and filling together lets a later clear
+       erase a flying pixel already drawn. */
+    for (let i = 0; i < live.length; i++) {
+      const q = live[i];
+      ctx.fillStyle = q.fill;
+      ctx.fillRect(q.x + q.ox, q.y + q.oy, cell, cell);
+    }
+  }
+
+  function frame() {
+    hover += (hoverTarget - hover) * 0.10;
+    if (Math.abs(hoverTarget - hover) < 0.002) hover = hoverTarget;
+
+    const reach = PUSH_RADIUS * dpr;
+    const reach2 = reach * reach;
+    const near = hover > 0.01 && px > -1e3;
+    live.length = 0;
+    let restless = false;
+
+    for (let i = 0; i < parts.length; i++) {
+      const q = parts[i];
+
+      /* Only pixels inside the cursor's radius scatter; everything else
+         holds at home and is drawn by the crisp bitmap. The mask is
+         measured from the pixel's HOME, not its current position —
+         measuring from the displaced position would drop a pixel out of
+         range the moment it flew, and it would snap straight back. */
+      let w = 0, ux = 0, uy = 0;
+      if (near) {
+        const dx = q.x - px;
+        const dy = q.y - py;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < reach2) {
+          const d = Math.sqrt(d2) || 1;
+          const f = 1 - d / reach;
+          /* Smoothstep, not f² — squaring dropped mid-radius pixels to a
+             quarter of their travel, which is what made the effect read
+             as weak everywhere except dead under the cursor. */
+          w = f * f * (3 - 2 * f);
+          ux = dx / d;
+          uy = dy / d;
+        }
+      }
+
+      const amt = w * hover * q.lag;
+      /* Half a blown-outward burst, half the pixel's own random flight —
+         a purely random direction sends half of them back through the
+         cursor and reads as jitter rather than displacement. */
+      const tx = (q.sx * 0.5 + ux * q.dist * 0.5) * amt;
+      const ty = (q.sy * 0.5 + uy * q.dist * 0.5) * amt;
+
+      if (amt === 0 && q.ox === 0 && q.oy === 0 && q.vx === 0 && q.vy === 0) continue;
+
+      q.vx = (q.vx + (tx - q.ox) * SPRING) * FRICTION;
+      q.vy = (q.vy + (ty - q.oy) * SPRING) * FRICTION;
+      q.ox += q.vx;
+      q.oy += q.vy;
+
+      if (amt === 0 &&
+          Math.abs(q.ox) < 0.35 && Math.abs(q.oy) < 0.35 &&
+          Math.abs(q.vx) < 0.35 && Math.abs(q.vy) < 0.35) {
+        q.ox = q.oy = q.vx = q.vy = 0;   /* home again; leave it to the bitmap */
+        continue;
+      }
+      if (Math.abs(q.vx) > 0.06 || Math.abs(q.vy) > 0.06) restless = true;
+      live.push(q);
+    }
+
+    /* Punch the holes first, into a scratch copy of the face. The
+       extrusion is then derived from what's *left*, so it can't outlive
+       the artwork above it. Building it from the full face instead left
+       a dark fringe tracing every shape: the silhouette copies are
+       scaled and offset, so they spill past the face's own footprint,
+       and no particle exists out there to clear them. */
+    paint();
+
+    /* Park the loop once nothing is actually moving. The canvas keeps its
+       last frame, so a settled scatter simply stays put under a resting
+       cursor; pointermove re-arms it. Without this the loop would spin
+       forever, since the pointer being anywhere on the stage holds
+       hover at 1. */
+    if (!restless && hover === hoverTarget) {
+      if (hover === 0 && !live.length) {
+        stack.classList.remove('scattering');   /* hand back to the crisp SVG */
+        active = false;
+      }
+      rafId = null;
+      return;
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function wake() {
+    if (!active) {
+      stack.classList.add('scattering');
+      active = true;
+      /* The class hides the <img> and the depth layers, so paint in the
+         same tick — otherwise the canvas shows one empty frame and the
+         emblem visibly blinks. */
+      live.length = 0;
+      paint();
+    }
+    if (!rafId) rafId = requestAnimationFrame(frame);
+  }
+
+  function trackPointer(e) {
+    /* Measured against the stage, which is never transformed. The canvas
+       is centred in it, so mapping centre-to-centre is exact — reading
+       canvas.getBoundingClientRect() instead returns the *tilted*
+       bounding box and drifts the scatter away from the real cursor. */
+    const s = stage.getBoundingClientRect();
+    if (!s.width || !canvas.width) return;
+    px = (e.clientX - s.left - s.width / 2) * dpr + canvas.width / 2;
+    py = (e.clientY - s.top - s.height / 2) * dpr + canvas.height / 2;
+  }
+
+  /* Listeners live on the stage, not on the badge. The badge is inside
+     the element the tilt transform moves, so hovering it slid it out
+     from under a stationary cursor — pointerleave fired, the pixels
+     reassembled, the tilt sprang back, pointerenter fired again. That
+     feedback loop is what made the scatter pulse on its own. The stage
+     doesn't move, so entering and leaving it is stable. */
+  stage.addEventListener('pointerenter', e => {
+    if (failed) return;
+    if (!built && !build()) return;
+    trackPointer(e);
+    hoverTarget = 1;
+    wake();
+  });
+
+  stage.addEventListener('pointermove', e => {
+    if (failed) return;
+    if (!built && !build()) return;
+    trackPointer(e);
+    hoverTarget = 1;
+    wake();   /* the loop parks itself when nothing moves, so re-arm it */
+  }, { passive: true });
+
+  stage.addEventListener('pointerleave', () => {
+    hoverTarget = 0;
+    px = py = -1e4;   /* out of range, so the local shove stops */
+    if (active) wake();
+  }, { passive: true });
+
+  /* Re-sample if the emblem changes size, otherwise particles would be
+     built for the old box. */
+  window.addEventListener('resize', () => { built = false; }, { passive: true });
 }
 
 /* ─────────────────────────────────────────────────────────────────

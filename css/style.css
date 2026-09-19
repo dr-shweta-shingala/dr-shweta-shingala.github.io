@@ -297,8 +297,11 @@ button { font-family:inherit; }
   -webkit-mask-image:radial-gradient(circle at 50% 45%, #000 0%, #000 30%, transparent 68%);
   opacity:.28;
 }
-/* Emblem — flat vector artwork, given depth with CSS 3D so the logo
-   itself stays exact. */
+/* Emblem — the real logo artwork, given thickness rather than redrawn.
+   Copies of the same SVG are stacked behind the crisp top one at
+   descending translateZ and brightness; tilting the badge reveals them
+   at the edge as a side wall, so it reads as a solid medallion while
+   the logo itself stays pixel-exact. */
 .hero-canvas-stage { perspective:900px; }
 .emblem3d {
   position:absolute; inset:0; z-index:2;
@@ -307,16 +310,53 @@ button { font-family:inherit; }
   transition:transform .6s var(--ease);
   animation:emblemFloat 7s ease-in-out infinite;
 }
+.emblem-stack {
+  position:relative; transform-style:preserve-3d;
+  width:clamp(190px, 64%, 330px);
+}
 .emblem-img {
-  width:clamp(190px, 64%, 330px); height:auto;
-  filter:drop-shadow(0 18px 26px rgba(31,74,48,.18));
+  display:block; width:100%; height:auto;
+  transform:translateZ(0);
+}
+/* Extrusion copies, injected by JS and stacked behind the face */
+.emblem-depth {
+  position:absolute; inset:0; width:100%; height:auto;
+  pointer-events:none; user-select:none;
+}
+/* Disintegration canvas — particles sampled from the same SVG, so the
+   assembled state matches the artwork and the swap is invisible. Only
+   shown while scattering. */
+/* Overspills the badge on every side: pixels fly well past the artwork's
+   own box, and a canvas sized to the box alone clips the outer cloud. */
+.emblem-particles {
+  position:absolute; left:-25%; top:-25%; width:150%; height:150%;
+  display:none; pointer-events:none;
+}
+.emblem-stack.scattering .emblem-particles { display:block; }
+/* Both the face and the extrusion hand over to the canvas, which redraws
+   the thickness itself. Leaving these visible put a solid logo behind
+   every hole the scatter opened; hiding them without the canvas redraw
+   made the badge flatten instead. */
+.emblem-stack.scattering .emblem-img,
+.emblem-stack.scattering .emblem-depth { visibility:hidden; }
+
+/* Contact shadow, kept flat on its own plane so it doesn't tilt with
+   the badge and give the depth away */
+.emblem-shadow {
+  position:absolute; left:50%; bottom:-6%; width:74%; height:14%;
+  transform:translate3d(-50%,0,-42px);
+  background:radial-gradient(ellipse at center, rgba(31,74,48,.34) 0%, rgba(31,74,48,.14) 45%, transparent 72%);
+  filter:blur(7px); pointer-events:none;
 }
 @keyframes emblemFloat {
-  0%,100% { transform:translateY(0)    rotateX(1deg)  rotateY(-2.5deg); }
-  50%     { transform:translateY(-10px) rotateX(-1deg) rotateY(2.5deg); }
+  0%,100% { transform:translateY(0)    rotateX(2deg)  rotateY(-6deg); }
+  50%     { transform:translateY(-10px) rotateX(-2deg) rotateY(6deg); }
 }
-/* While the pointer is steering it, drop the idle loop and track faster */
-.emblem3d.steering { animation:none; transition:transform .12s linear; }
+/* While the pointer is steering it, drop the idle loop and track the
+   cursor; on release, glide back over a longer beat before the float
+   animation takes over again. */
+.emblem3d.steering  { animation:none; transition:transform .18s ease-out; }
+.emblem3d.releasing { transition:transform .32s var(--ease); }
 
 
 .float-card {
