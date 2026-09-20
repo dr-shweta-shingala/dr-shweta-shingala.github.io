@@ -245,7 +245,10 @@ function initCounters() {
    transition on mouseleave.
 ───────────────────────────────────────────────────────────────── */
 function initCardTilt() {
-  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  /* any-hover/any-pointer, not hover/pointer: a laptop with a touchscreen
+     reports touch as its PRIMARY pointer even while a mouse is plugged in,
+     so the strict query is false there and the effect silently never ran. */
+  const canHover = window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!canHover || reducedMotion) return;
 
@@ -390,7 +393,10 @@ function initEmblemTilt() {
     stack.insertBefore(frag, face);   /* behind the crisp face */
   });
 
-  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  /* any-hover/any-pointer, not hover/pointer: a laptop with a touchscreen
+     reports touch as its PRIMARY pointer even while a mouse is plugged in,
+     so the strict query is false there and the effect silently never ran. */
+  const canHover = window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!canHover || reducedMotion) return;
 
