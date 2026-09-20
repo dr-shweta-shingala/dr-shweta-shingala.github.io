@@ -398,7 +398,18 @@ function initEmblemTilt() {
      so the strict query is false there and the effect silently never ran. */
   const canHover = window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!canHover || reducedMotion) return;
+  if (reducedMotion) return;
+
+  /* The scatter runs everywhere — on touch it follows the finger while it
+     is down. The tilt does not: with no hovering pointer there is nothing
+     to steer it with between taps, so it stays on its idle float. */
+  if (!canHover) {
+    stacks.forEach(stack => {
+      const face = stack.querySelector('.emblem-img');
+      if (face) initEmblemScatter(stage, stack, face, { rx: 2, ry: -6 });
+    });
+    return;
+  }
 
   const MAX = 13;   /* degrees — enough to show the side wall, short of skewing the art */
   /* The idle float's first keyframe. Handing control back at exactly this
@@ -799,11 +810,26 @@ function initEmblemScatter(stage, stack, face, tilt) {
     wake();   /* the loop parks itself when nothing moves, so re-arm it */
   }, { passive: true });
 
-  stage.addEventListener('pointerleave', () => {
+  /* Touch never hovers: the finger arrives with pointerdown and is gone on
+     pointerup, so those stand in for enter and leave. Nothing here calls
+     preventDefault, so a drag that begins on the badge still scrolls the
+     page — the pixels just follow the finger on the way past. */
+  stage.addEventListener('pointerdown', e => {
+    if (failed) return;
+    if (!built && !build()) return;
+    trackPointer(e);
+    hoverTarget = 1;
+    wake();
+  }, { passive: true });
+
+  const release = () => {
     hoverTarget = 0;
     px = py = -1e4;   /* out of range, so the local shove stops */
     if (active) wake();
-  }, { passive: true });
+  };
+  stage.addEventListener('pointerleave', release, { passive: true });
+  stage.addEventListener('pointerup', release, { passive: true });
+  stage.addEventListener('pointercancel', release, { passive: true });
 
   /* Re-sample if the emblem changes size, otherwise particles would be
      built for the old box. */
