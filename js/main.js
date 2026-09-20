@@ -356,34 +356,40 @@ function initEmblemTilt() {
   const art = stage.querySelector('.emblem3d');
   if (!art) return;
 
-  /* Build the extrusion behind the face: copies of the same SVG (one
-     network fetch, cached) stepped back in Z and progressively darkened,
+  /* Every badge in the stage gets the same treatment. Build the
+     extrusion behind each face: copies of the same SVG (one network
+     fetch each, cached) stepped back in Z and progressively darkened,
      so the badge has a visible side wall when it tilts. Injected rather
-     than authored in markup so the page still shows the plain logo with
-     JS off. */
-  const stack = document.getElementById('emblemStack');
-  const face = stack && stack.querySelector('.emblem-img');
-  if (stack && face) {
-    const LAYERS = DEPTH_LAYERS, STEP = DEPTH_STEP;
+     than authored in markup so the page still shows the plain logos
+     with JS off. */
+  const stacks = Array.prototype.slice.call(stage.querySelectorAll('.emblem-stack'));
+  stacks.forEach((stack, idx) => {
+    const face = stack.querySelector('.emblem-img');
+    if (!face) return;
     const frag = document.createDocumentFragment();
-    for (let i = LAYERS; i >= 1; i--) {
+    for (let i = DEPTH_LAYERS; i >= 1; i--) {
       const layer = document.createElement('img');
       layer.src = face.getAttribute('src');
       layer.alt = '';
       layer.setAttribute('aria-hidden', 'true');
       layer.className = 'emblem-depth';
       /* darkest at the back, easing toward the lit face */
-      const k = i / LAYERS;
-      layer.style.transform = `translateZ(${(-i * STEP).toFixed(2)}px)`;
+      const k = i / DEPTH_LAYERS;
+      layer.style.transform = `translateZ(${(-i * DEPTH_STEP).toFixed(2)}px)`;
       layer.style.filter = `brightness(${(1 - 0.5 * k).toFixed(3)}) saturate(${(1 - 0.25 * k).toFixed(3)})`;
       frag.appendChild(layer);
     }
-    const shadow = document.createElement('div');
-    shadow.className = 'emblem-shadow';
-    shadow.setAttribute('aria-hidden', 'true');
-    frag.appendChild(shadow);
+    /* Only the bottom badge gets a contact shadow. On the upper one it
+       fell straight onto the badge below it, which read as grime rather
+       than depth. */
+    if (idx === stacks.length - 1) {
+      const shadow = document.createElement('div');
+      shadow.className = 'emblem-shadow';
+      shadow.setAttribute('aria-hidden', 'true');
+      frag.appendChild(shadow);
+    }
     stack.insertBefore(frag, face);   /* behind the crisp face */
-  }
+  });
 
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -438,7 +444,10 @@ function initEmblemTilt() {
     }, 340);
   }, { passive: true });
 
-  if (stack && face) initEmblemScatter(stage, stack, face, tilt);
+  stacks.forEach(stack => {
+    const face = stack.querySelector('.emblem-img');
+    if (face) initEmblemScatter(stage, stack, face, tilt);
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -740,15 +749,25 @@ function initEmblemScatter(stage, stack, face, tilt) {
     if (!rafId) rafId = requestAnimationFrame(frame);
   }
 
+  /* Layout position of an element inside the stage, walking offsetParents
+     so the answer ignores the 3D transform on the way up. */
+  function offsetWithin(el) {
+    let x = 0, y = 0, n = el;
+    while (n && n !== stage) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+    return { x, y };
+  }
+
   function trackPointer(e) {
-    /* Measured against the stage, which is never transformed. The canvas
-       is centred in it, so mapping centre-to-centre is exact — reading
-       canvas.getBoundingClientRect() instead returns the *tilted*
-       bounding box and drifts the scatter away from the real cursor. */
+    /* Measured against the stage, which is never transformed, and against
+       this canvas's own layout box — with more than one badge on the
+       stage they aren't centred on it, and reading
+       canvas.getBoundingClientRect() would return the *tilted* box and
+       drift the scatter away from the real cursor. */
     const s = stage.getBoundingClientRect();
     if (!s.width || !canvas.width) return;
-    px = (e.clientX - s.left - s.width / 2) * dpr + canvas.width / 2;
-    py = (e.clientY - s.top - s.height / 2) * dpr + canvas.height / 2;
+    const o = offsetWithin(canvas);
+    px = (e.clientX - s.left - o.x - canvas.offsetWidth / 2) * dpr + canvas.width / 2;
+    py = (e.clientY - s.top - o.y - canvas.offsetHeight / 2) * dpr + canvas.height / 2;
   }
 
   /* Listeners live on the stage, not on the badge. The badge is inside

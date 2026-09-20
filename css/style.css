@@ -305,14 +305,28 @@ button { font-family:inherit; }
 .hero-canvas-stage { perspective:900px; }
 .emblem3d {
   position:absolute; inset:0; z-index:2;
-  display:flex; align-items:center; justify-content:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  --badge:clamp(140px, 48%, 235px);
   transform-style:preserve-3d;
   transition:transform .6s var(--ease);
   animation:emblemFloat 7s ease-in-out infinite;
 }
 .emblem-stack {
   position:relative; transform-style:preserve-3d;
-  width:clamp(190px, 64%, 330px);
+  width:var(--badge);
+}
+/* Both SVGs carry empty margin inside their own box — the emblem about a
+   fifth of its height at the bottom, the caduceus about a fifth at the
+   top now its wings sit level with the staff — which together eat 0.4273
+   of a badge, so even a zero gap leaves them looking far apart. Pulling up
+   by 0.4063 leaves 0.021 of a badge of real air, so the wings reach up
+   toward the bowl without touching it. */
+.emblem-stack + .emblem-stack {
+  margin-top:calc(var(--badge) * -0.4063);
+  /* Behind the badge above it — sitting in front, its wings covered the
+     lower ring and it looked pasted on rather than carrying it. Clears
+     the first badge's extrusion, which reaches back to -12px. */
+  transform:translateZ(-16px);
 }
 .emblem-img {
   display:block; width:100%; height:auto;
@@ -377,19 +391,19 @@ button { font-family:inherit; }
    ----------------------------------------------------------------- */
 .about { padding:100px 0; background:var(--white); }
 .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
-.about-visual { position:relative; }
+/* Capped to the photo's own width so it is never upscaled, and so the
+   credential badges, which anchor to this box, stay on the card's corners. */
+.about-visual { position:relative; max-width:460px; margin-inline:auto; }
 
 .doc-card {
-  width:100%; height:480px; border-radius:var(--r-xl);
+  /* Matches the photo's own 508x702, so object-fit:cover crops nothing.
+     The gradient shows while the photo is still loading. */
+  width:100%; aspect-ratio:508 / 702; border-radius:var(--r-xl);
   background:linear-gradient(145deg,#F6EFE6,#E7D9C4);
-  display:flex; align-items:center; justify-content:center;
   position:relative; overflow:hidden;
+  box-shadow:var(--sh-lg);
 }
-.doc-icon { font-size:9rem; opacity:.7; user-select:none; }
-.deco-circle { position:absolute; border-radius:50%; background:rgba(47,107,69,.12); }
-.deco-circle.d1 { width:90px; height:90px; top:24px; right:24px; }
-.deco-circle.d2 { width:65px; height:65px; bottom:50px; left:28px; background:rgba(215,155,61,.22); }
-.deco-circle.d3 { width:40px; height:40px; top:50%; left:16%; background:rgba(227,169,161,.35); }
+.doc-photo { display:block; width:100%; height:100%; object-fit:cover; }
 
 .cred-badge {
   position:absolute; background:var(--white); border-radius:var(--r);
@@ -397,7 +411,6 @@ button { font-family:inherit; }
   display:flex; align-items:center; gap:11px;
 }
 .cred-badge.b1 { bottom:-18px; right:-18px; }
-.cred-badge.b2 { top:28px;    left:-18px; }
 .cb-ico  { font-size:1.5rem; }
 .cb-main { font-size:.82rem; font-weight:700; color:var(--txt-dark); }
 .cb-sub  { font-size:.70rem; color:var(--txt-light); }
@@ -571,19 +584,34 @@ button { font-family:inherit; }
   font-size:1rem; flex-shrink:0;
 }
 .ci-lbl { font-size:.70rem; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
-.ci-val { font-size:.88rem; color:var(--white); font-weight:500; margin-top:2px; }
+.ci-val {
+  font-size:.88rem; color:var(--white); font-weight:500; margin-top:2px;
+  /* The clinic address is one long unbreakable token and reaches the
+     card edge on a 390px phone. */
+  overflow-wrap:anywhere;
+}
 
 .cta-btns { display:flex; flex-direction:column; gap:11px; margin-top:22px; }
 .cta-btns .btn { width:100%; justify-content:center; }
 .btn-wa svg { width: 20px;}
-.map-ph {
+.map-embed {
   margin-top:20px; border-radius:var(--r); overflow:hidden;
-  height:160px; background:rgba(255,255,255,.1);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  color:rgba(255,255,255,.5); font-size:.82rem; gap:6px;
-  border:1px dashed rgba(255,255,255,.2);
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.18);
 }
-.map-ph span { font-size:1.5rem; }
+.map-embed iframe {
+  display:block; width:100%; height:190px; border:0;
+  /* The map is the only light surface on this dark card, so it is pulled
+     back a shade to sit with the text rather than glare against it. */
+  filter:saturate(.9);
+}
+.map-open {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:11px 14px; font-size:.82rem; font-weight:600;
+  color:var(--white); text-decoration:none;
+  background:rgba(255,255,255,.12); transition:var(--t);
+}
+.map-open:hover, .map-open:focus-visible { background:rgba(255,255,255,.22); }
 
 /* -----------------------------------------------------------------
    13. FAQ
@@ -625,7 +653,7 @@ button { font-family:inherit; }
    ----------------------------------------------------------------- */
 .footer { background:#0E2116; color:rgba(255,255,255,.65); padding:76px 0 0; }
 .footer-grid {
-  display:grid; grid-template-columns:2fr 1fr 1fr 1.4fr; gap:44px;
+  display:grid; grid-template-columns:2fr 1fr 1fr 1.9fr; gap:44px;
   padding-bottom:56px; border-bottom:1px solid rgba(255,255,255,.07);
 }
 
