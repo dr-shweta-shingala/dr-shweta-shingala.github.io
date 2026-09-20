@@ -363,7 +363,7 @@ function initEmblemTilt() {
      than authored in markup so the page still shows the plain logos
      with JS off. */
   const stacks = Array.prototype.slice.call(stage.querySelectorAll('.emblem-stack'));
-  stacks.forEach((stack, idx) => {
+  stacks.forEach(stack => {
     const face = stack.querySelector('.emblem-img');
     if (!face) return;
     const frag = document.createDocumentFragment();
@@ -373,21 +373,20 @@ function initEmblemTilt() {
       layer.alt = '';
       layer.setAttribute('aria-hidden', 'true');
       layer.className = 'emblem-depth';
-      /* darkest at the back, easing toward the lit face */
+      /* Faintest at the back, easing toward the lit face. These are
+         translucent rather than solid: an opaque copy of the artwork
+         peeking out from behind a glyph puts a hard dark edge on it,
+         which reads as a heavier typeface instead of as thickness. */
       const k = i / DEPTH_LAYERS;
       layer.style.transform = `translateZ(${(-i * DEPTH_STEP).toFixed(2)}px)`;
-      layer.style.filter = `brightness(${(1 - 0.5 * k).toFixed(3)}) saturate(${(1 - 0.25 * k).toFixed(3)})`;
+      layer.style.opacity = (0.40 - 0.06 * i).toFixed(2);
+      layer.style.filter = `brightness(${(1 - 0.16 * k).toFixed(3)}) saturate(${(1 - 0.10 * k).toFixed(3)})`;
       frag.appendChild(layer);
     }
-    /* Only the bottom badge gets a contact shadow. On the upper one it
-       fell straight onto the badge below it, which read as grime rather
-       than depth. */
-    if (idx === stacks.length - 1) {
-      const shadow = document.createElement('div');
-      shadow.className = 'emblem-shadow';
-      shadow.setAttribute('aria-hidden', 'true');
-      frag.appendChild(shadow);
-    }
+    const shadow = document.createElement('div');
+    shadow.className = 'emblem-shadow';
+    shadow.setAttribute('aria-hidden', 'true');
+    frag.appendChild(shadow);
     stack.insertBefore(frag, face);   /* behind the crisp face */
   });
 
@@ -467,7 +466,9 @@ function initEmblemTilt() {
    the logo is full resolution whenever it isn't being touched. Built
    lazily on first hover.
 ───────────────────────────────────────────────────────────────── */
-const DEPTH_LAYERS = 8, DEPTH_STEP = 1.5;   /* ≈12px of badge thickness */
+const DEPTH_LAYERS = 4, DEPTH_STEP = 0.9;   /* ≈4px of thickness — the lockup
+                                               is fine text, and a deeper wall
+                                               reads as a bolder typeface */
 
 function initEmblemScatter(stage, stack, face, tilt) {
   const canvas = document.createElement('canvas');
@@ -633,7 +634,7 @@ function initEmblemScatter(stage, stack, face, tilt) {
       const d = i * DEPTH_STEP * dpr;
       const s = 900 / (900 + d);
       const w = silh.width * s, h = silh.height * s;
-      ctx.globalAlpha = 0.42 - i * 0.02;
+      ctx.globalAlpha = 0.20 - i * 0.02;
       ctx.drawImage(
         silh,
         cx - w / 2 - d * Math.sin(ryr),

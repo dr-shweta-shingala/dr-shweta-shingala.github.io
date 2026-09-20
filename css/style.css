@@ -150,7 +150,9 @@ button { font-family:inherit; }
 .logo { display:flex; align-items:center; gap:11px; }
 
 .logo-img {
-  width:200px;
+  /* The height follows the width; the markup used to pin it to a square,
+     which letterboxed the lockup and stopped it shrinking on mobile. */
+  width:200px; height:auto;
   object-fit:contain;
   border-radius:10px;
   flex-shrink:0;
@@ -306,7 +308,7 @@ button { font-family:inherit; }
 .emblem3d {
   position:absolute; inset:0; z-index:2;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  --badge:clamp(140px, 48%, 235px);
+  --badge:clamp(220px, 78%, 400px);
   transform-style:preserve-3d;
   transition:transform .6s var(--ease);
   animation:emblemFloat 7s ease-in-out infinite;
@@ -314,19 +316,6 @@ button { font-family:inherit; }
 .emblem-stack {
   position:relative; transform-style:preserve-3d;
   width:var(--badge);
-}
-/* Both SVGs carry empty margin inside their own box — the emblem about a
-   fifth of its height at the bottom, the caduceus about a fifth at the
-   top now its wings sit level with the staff — which together eat 0.4273
-   of a badge, so even a zero gap leaves them looking far apart. Pulling up
-   by 0.4063 leaves 0.021 of a badge of real air, so the wings reach up
-   toward the bowl without touching it. */
-.emblem-stack + .emblem-stack {
-  margin-top:calc(var(--badge) * -0.4063);
-  /* Behind the badge above it — sitting in front, its wings covered the
-     lower ring and it looked pasted on rather than carrying it. Clears
-     the first badge's extrusion, which reaches back to -12px. */
-  transform:translateZ(-16px);
 }
 .emblem-img {
   display:block; width:100%; height:auto;
@@ -354,14 +343,19 @@ button { font-family:inherit; }
 .emblem-stack.scattering .emblem-img,
 .emblem-stack.scattering .emblem-depth { visibility:hidden; }
 
-/* Contact shadow, kept flat on its own plane so it doesn't tilt with
-   the badge and give the depth away */
+/* Ground shadow, on its own plane so it doesn't tilt with the artwork and
+   give the depth away. It sits fully clear of the bottom edge: the lockup
+   ends on a line of type, and a shadow overlapping that reads as a smudge
+   across the words rather than as a cast shadow. */
 .emblem-shadow {
-  position:absolute; left:50%; bottom:-6%; width:74%; height:14%;
-  transform:translate3d(-50%,0,-42px);
-  background:radial-gradient(ellipse at center, rgba(31,74,48,.34) 0%, rgba(31,74,48,.14) 45%, transparent 72%);
-  filter:blur(7px); pointer-events:none;
+  position:absolute; left:50%; top:100%; width:68%; height:12%;
+  margin-top:10px;
+  transform:translate3d(-50%,0,-30px);
+  background:radial-gradient(ellipse at center,
+    rgba(31,74,48,.42) 0%, rgba(31,74,48,.18) 46%, transparent 72%);
+  filter:blur(9px); pointer-events:none;
 }
+
 @keyframes emblemFloat {
   0%,100% { transform:translateY(0)    rotateX(2deg)  rotateY(-6deg); }
   50%     { transform:translateY(-10px) rotateX(-2deg) rotateY(6deg); }
@@ -842,6 +836,12 @@ button { font-family:inherit; }
   .hero-p           { margin:0 auto 28px; }
   .hero-btns        { justify-content:center; }
   .hero-kpis        { justify-content:center; }
+  /* The lockup is wide, and at its desktop 200px it made the fixed navbar
+     132px tall — more than the hero's 110px of top padding, so the hero's
+     first element slid underneath it. */
+  .logo-img         { width:140px; }
+  .hero             { padding-top:124px; }
+
   .hero-canvas-wrap { height:340px; order:-1; }
   .float-card.c1    { left:0; bottom:-6px; }
   .float-card.c2    { right:0; }
